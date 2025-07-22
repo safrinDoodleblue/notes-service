@@ -5,82 +5,44 @@ const MongoStore = require('connect-mongo');
 const passport = require('passport');
 require('dotenv').config();
 require('./config/passport');
-
-const routes = require('../../Routes');
+const notesRoutes = require('./Routes/index');
 
 const app = express();
-
 app.use(express.json());
 
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET, 
-    resave: false,//Avoids unnecessary saving if session didn't change
-    saveUninitialized: false,//	Avoids saving empty sessions
-    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
-    cookie: { maxAge: 1000 * 60 * 60 }, 
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+    }),
+    cookie: {
+      maxAge: 1000 * 60 * 60,
+      domain: '.localhost',
+    },
   })
 );
 
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use('/api', notesRoutes);
 
-app.use('/api', routes);
+const startServer = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('Notes service connected to MongoDB');
 
-const PORT = process.env.PORT || 3000;
-
-const startServer=async () => {
-    try {
-        await mongoose.connect(process.env.MONGO_URI);
-         console.log('MongoDB connected');
-        app.listen(PORT,()=>{
-            console.log(`Server running at http://localhost:${process.env.PORT}`);
-        })
-    } catch (err) {
-        console.error('MongoDB connection error:', err);
-    }
+    const PORT = process.env.PORT || 4000;
+    app.listen(PORT, () => {
+      console.log(`Notes service running at http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error('MongoDB connection failed:', err);
+  }
 };
+
 startServer();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// const express=require('express');
-// const mongoose=require('mongoose');
-// const passport = require('passport');
-// require('dotenv').config();
-// require('./config/passport');
-// const routes=require('./Routes')
-
-// const app=express();
-
-// app.use(express.json());
-// app.use(passport.initialize());
-// const PORT=process.env.PORT ||3000;
-// app.use('/api',routes);
-
-// const startServer=async () => {
-//     try {
-//         await mongoose.connect(process.env.MONGO_URI);
-//          console.log('MongoDB connected');
-//         app.listen(PORT,()=>{
-//             console.log(`Server running at http://localhost:${process.env.PORT}`);
-//         })
-//     } catch (err) {
-//         console.error('MongoDB connection error:', err);
-//     }
-// };
-// startServer();
